@@ -1,5 +1,5 @@
 # Filnamn på ditt I/O-bibliotek (ändra namn om du vill)
-LIB_FILE=lab3_lib.s
+LIB_FILE=my_iolib.s
 
 # Namn på körbara testprogram (ändra namn om du vill)
 OUT_ASM=asmTest

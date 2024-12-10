@@ -1,6 +1,7 @@
 extern void inImage();
 extern long long getInt();
 extern int getText(char *, int);
+extern char getChar();
 extern int getInPos();
 extern void setInPos(int);
 
