@@ -34,3 +34,11 @@ clean:
 		rm -f $(OUT_ASM)
 		rm -f $(OUT_C)
 		rm -f *.o
+
+		rm -f test
+
+
+
+# eget testprogram
+test:
+	gcc -g -no-pie my_iolib.s other_test.c -o test

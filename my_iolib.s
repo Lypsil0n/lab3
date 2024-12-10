@@ -1,15 +1,23 @@
 .data
-    inBuf: .space 8
+    inBuf: .space 64
     inPos: .quad 0
 
-    outBuf: .space 8
-    outPus: .quad 0
+    outBuf: .space 64
+    outPos: .quad 0
 
 .text
-
 # Inmatning
 .global inImage
 inImage:
+    subq $8, %rsp
+
+    leaq inBuf(%rip), %rdi
+    movq $65, %rsi
+    movq $0, %rdx
+
+    call fgets
+    
+    addq $8, %rsp 
 
 .global getInt
 getInt:
@@ -22,6 +30,8 @@ getChar:
  
 .global getInPos
 getInPos:
+    movq inPos, %rax
+    ret
 
 .global setInPos
 setInPos:
