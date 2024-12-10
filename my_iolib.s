@@ -3,7 +3,7 @@
     inPos: .quad 0
 
     outBuf: .space 8
-    outPus: .quad 0
+    outPos: .quad 0
 
 .text
 
@@ -25,6 +25,21 @@ getInPos:
 
 .global setInPos
 setInPos:
+movsxd %edi, %rdi
+cmpq $0, %rdi
+jl inMin
+cmpq $64, %rdi
+jg inMax
+movq %rdi, inPos
+ret
+
+inMin:
+movq $0, inPos
+ret
+
+inMax:
+movq $64, inPos
+ret
 
 # Utmatning
 .global outImage
@@ -44,3 +59,18 @@ getOutPos:
 
 .global setOutPos
 setOutPos:
+movsxd %edi, %rdi
+cmpq $0, %rdi
+jl outMin
+cmpq $64, %rdi
+jg outMax
+movq %rdi, outPos
+ret
+
+outMin:
+movq $0, outPos
+ret
+
+outMax:
+movq $64, outPos
+ret
