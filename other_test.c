@@ -6,23 +6,11 @@ extern char inBuf[64];
 int main()
 {
     
-    
+    char text[] = "Hello World!";
 
-    printf("Skriv något: ");
-    inImage();  
+    putText(text);
+    outImage();
 
-
-    if (inBuf[0] == '\0') {
-        printf("No input was read.\n");
-    } else {
-        printf("Du skrev: %s", inBuf);  
-    }
-
-    printf("%s", inBuf);
-    printf("%s", inBuf);
-    printf("%s", inBuf);
-    printf("%s", inBuf);
-    printf("%s", inBuf);
 
     return 0;
 }
