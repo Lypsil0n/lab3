@@ -18,8 +18,9 @@ inImage:
 
     call fgets
     
-    addq $8, %rsp 
+    movq $0, inPos(%rip)
 
+    addq $8, %rsp 
     ret
 
 .global getInt

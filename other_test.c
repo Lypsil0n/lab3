@@ -15,8 +15,14 @@ int main()
     if (inBuf[0] == '\0') {
         printf("No input was read.\n");
     } else {
-        printf("Du skrev: %s\n", inBuf);  
+        printf("Du skrev: %s", inBuf);  
     }
+
+    printf("%s", inBuf);
+    printf("%s", inBuf);
+    printf("%s", inBuf);
+    printf("%s", inBuf);
+    printf("%s", inBuf);
 
     return 0;
 }
