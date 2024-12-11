@@ -58,7 +58,6 @@ putInt:
 
 .global putText
 putText:
-    
 
 .global putChar
 putChar:
