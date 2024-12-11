@@ -14,7 +14,7 @@ inImage:
     leaq inBuf(%rip), %rdi
     movq $65, %rsi
     movq $0, %rdx
-
+    
     call fgets
     
     addq $8, %rsp 
