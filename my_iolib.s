@@ -1,4 +1,5 @@
 .data
+    .globl inBuf
     inBuf: .space 64
     inPos: .quad 0
 
@@ -12,12 +13,14 @@ inImage:
     subq $8, %rsp
 
     leaq inBuf(%rip), %rdi
-    movq $65, %rsi
-    movq $0, %rdx
-    
+    movq $63, %rsi
+    movq stdin, %rdx
+
     call fgets
     
     addq $8, %rsp 
+
+    ret
 
 .global getInt
 getInt:

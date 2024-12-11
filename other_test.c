@@ -1,9 +1,12 @@
 #include "my_iolib.h"
 #include <stdio.h>
 
+extern char inBuf[64];
+
 int main()
 {
-    char inBuf[64]; 
+    
+    
 
     printf("Skriv något: ");
     inImage();  
