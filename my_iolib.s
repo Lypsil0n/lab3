@@ -1,8 +1,8 @@
 .data
-    inBuf: .space 8
+    inBuf: .space 64
     inPos: .quad 0
 
-    outBuf: .space 8
+    outBuf: .space 64
     outPos: .quad 0
 
 .text
@@ -19,6 +19,11 @@ getText:
 
 .global getChar
 getChar:
+# movq inBuf, %rax
+# movq inPos, %rcx
+# movzbq (%rax,%rcx), %rax
+addq $1, inPos
+ret
  
 .global getInPos
 getInPos:
@@ -53,6 +58,11 @@ putText:
 
 .global putChar
 putChar:
+movq inBuf, %rax
+movq inPos, %rcx
+movb %dil, (%rax,%rcx)
+# addq $1, inPos
+ret
 
 .global getOutPos
 getOutPos:
