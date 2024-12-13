@@ -1,15 +1,13 @@
 #include "my_iolib.h"
 #include <stdio.h>
 
-extern char inBuf[64];
-
 int main()
 {
-    
-    char text[] = "Hello World!";
+    int pos = getInPos();
 
-    putText(text);
-    outImage();
+    inImage();
+
+    printf("%d\n", pos);
 
 
     return 0;

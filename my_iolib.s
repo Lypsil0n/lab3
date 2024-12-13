@@ -59,11 +59,14 @@ putInt:
 .global putText
 putText:
 
+
 .global putChar
 putChar:
 
 .global getOutPos
 getOutPos:
+    movq outPos, %rax
+    ret
 
 .global setOutPos
 setOutPos:
