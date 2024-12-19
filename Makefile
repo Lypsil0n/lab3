@@ -36,9 +36,13 @@ clean:
 		rm -f *.o
 
 		rm -f test
+		rm -f new
 
 
 
 # eget testprogram
 test:
 	gcc -g -no-pie my_iolib.s other_test.c -o test
+
+new:
+	gcc -g -no-pie my_iolib.s new_test.c -o new

@@ -1,14 +1,26 @@
 #include "my_iolib.h"
 #include <stdio.h>
 
+//test
+
 int main()
 {
-    int pos = getInPos();
+    char msg[] = "Hello World!";
+    char msg2[] = "How are you doing?";
+    char msg3[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-    inImage();
+    putText(msg);
+    outImage();
 
-    printf("%d\n", pos);
+    putText(msg2);
+    outImage();
 
+    putText(msg3);
+    outImage();
 
-    return 0;
+    char anotherMsg[] = "Hello again";
+    putText(anotherMsg);
+    outImage();
+
 }
+
