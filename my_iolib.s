@@ -57,36 +57,32 @@ putInt:
 
 .global putText
 putText:
-    mov %rdi, %rbx                      # %rdi contains the address of the input string (buf)
-    leaq outBuf(%rip), %rdi             # Load the address of outBuf into %rdi
-    movq outPos(%rip), %rsi             # Load the current position in the buffer (outPos)
+    mov %rdi, %rbx                      # %rdi innehåller strängen som ska läsas
+    leaq outBuf(%rip), %rdi             # ladda utbufferten
+    movq outPos(%rip), %rsi             # ladda nuvarande outPos
 
 putText_loop:
-    movb (%rbx), %al                    # Load 1 byte from the input string (buf)
-    testb %al, %al                      # Check if the byte is NULL (end of string)
-    je putText_done                     # If it's NULL, terminate the loop
+    movb (%rbx), %al                    # ladda tecken från strängen
+    testb %al, %al                      # kolla ifall tecknet är NULL
+    je putText_done                     # om null, gå till slutet
 
-    cmp $64, %rsi                       # Check if the buffer is full (outPos >= 64)
-    je flush_buffer                    # If buffer is full (outPos == 64), flush it
+    cmp $64, %rsi                       # kolla ifall bufferten är full
+    je flush_buffer                     # om den är tom, flusha bufferten
 
-    movb %al, (%rdi, %rsi, 1)           # Write the byte to the buffer at the correct position
-    inc %rsi                            # Increment the current position (outPos)
-    inc %rbx                            # Move to the next byte in the input string
-    jmp putText_loop                    # Repeat the loop
+    movb %al, (%rdi, %rsi, 1)           # skriv tecknet till utbufferten
+    inc %rsi                            # öka nuvarande position i bufferten
+    inc %rbx                            # gå till nästa tecken
+    jmp putText_loop                    # repetera
 
 flush_buffer:
-    movb $0, (%rdi, %rsi, 1) 
-    # Call outImage to print the current contents of the buffer
-    call outImage                       # Flush the buffer (print it)
+    movb $0, (%rdi, %rsi, 1)   # nullterminate bufferten
+    call outImage              # skriv ut bufferten
 
-    # Reset outPos to 0 after flushing the buffer
-    movq $0, %rsi                       # Reset position (outPos) to 0
-    movq %rsi, outPos(%rip)             # Update outPos to 0 (buffer is now empty)
-    jmp putText_loop                    # Continue processing the string
+    jmp putText_loop           # fortsätt
 
 putText_done:
+    mov %rsi, outPos(%rip)              # uppdatera outPos
     movb $0, (%rdi, %rsi, 1)
-    mov %rsi, outPos(%rip)              # Update outPos with the current position in the buffer
     ret
 
 

@@ -5,22 +5,19 @@
 
 int main()
 {
-    char msg[] = "Hello World!";
-    char msg2[] = "How are you doing?";
-    char msg3[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    char msg[] = "Hello World!\n";
+    char msg2[] = "How are you doing today?\n";
+    char msg3[] = "I'm doing great!";
 
     putText(msg);
-    outImage();
 
     putText(msg2);
-    outImage();
 
     putText(msg3);
-    outImage();
+    
 
-    char anotherMsg[] = "Hello again";
-    putText(anotherMsg);
+    int pos = getOutPos();
+    printf("Current position: %d\n", pos);
     outImage();
-
 }
 

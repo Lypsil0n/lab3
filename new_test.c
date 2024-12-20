@@ -43,14 +43,14 @@ int main(){
     // // och skriver uträkningen till terminalskärmen.
     // putChar('=');
     // putInt(sum);
-    // outImage();
+    //outImage();
 
     // Försöker läsa ytterligare 12 tecken från inbufferten,
     // och lägger de lästa tecknen i utbufferten.
     // Lägger även till ett nyradstecken och talet 125 i utbufferten,
     // och skriver sedan ut alltihopa i terminalen.
 //     getText(buf, 12); 
-//     putText(buf);
+     putText(buf);
 // //    putChar('\n');
 //     // putInt(125);    
 //     outImage(); 

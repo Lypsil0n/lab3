@@ -5,6 +5,8 @@ LIB_FILE=my_iolib.s
 OUT_ASM=asmTest
 OUT_C=cTest
 
+TEST_C=test
+
 # Kompilator, assemblator och länkare
 CC=gcc
 AS=as
