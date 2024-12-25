@@ -3,6 +3,7 @@
 *************************************************************/
 
 #include "my_iolib.h"
+#include "stdio.h"
 
 //test
 
@@ -24,20 +25,22 @@ int main(){
     // Loop som hämtar 5 tal från inmatningsbuffert, 
     // samt placerar uträkning med dessa tal att presentera i utmatningsbufferten.
     // Talen summeras också i variabeln sum.
-    // for (count=5; count>0; count-- ){
-    //     temp = getInt();
-    //     if (temp < 0){
-    //         pos = getOutPos();
-    //         pos--;
-    //         setOutPos(pos);
-    //     }
-    //     sum += temp;
-    //     putInt(temp);
-    //     putChar('+');
-    // }
+    for (count=5; count>0; count-- ){
+        temp = getInt();
+        if (temp < 0){
+            pos = getOutPos();
+            pos--;
+            setOutPos(pos);
+        }
+        sum += temp;
+        //putInt(temp);
+        //putChar('+');
+    }
     // pos = getOutPos();
     // pos--;
     // setOutPos(pos);
+
+    printf("%d\n", sum);
 
     // // Lägger till summan i uträkningen i utbufferten,
     // // och skriver uträkningen till terminalskärmen.

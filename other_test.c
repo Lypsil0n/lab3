@@ -4,20 +4,10 @@
 //test
 
 int main()
-{
-    char msg[] = "Hello World!\n";
-    char msg2[] = "How are you doing today?\n";
-    char msg3[] = "I'm doing great!";
+{   
+    inImage();
+    int temp = getInt();
 
-    putText(msg);
-
-    putText(msg2);
-
-    putText(msg3);
-    
-
-    int pos = getOutPos();
-    printf("Current position: %d\n", pos);
-    outImage();
+    printf("%d\n", temp);
 }
 
