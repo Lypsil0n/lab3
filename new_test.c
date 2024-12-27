@@ -36,9 +36,9 @@ int main(){
         //putInt(temp);
         //putChar('+');
     }
-    // pos = getOutPos();
-    // pos--;
-    // setOutPos(pos);
+    pos = getOutPos();
+    pos--;
+    setOutPos(pos);
 
     printf("%d\n", sum);
 

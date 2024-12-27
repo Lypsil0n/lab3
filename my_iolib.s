@@ -31,7 +31,7 @@ getInt:
     je callInImage
 
 parse_number:
-    # Skip leading whitespace
+    movq $1, %rbx               # default är positivt tal
 skip_whitespace:
     movb (%rdi,%rsi,1), %al     # ladda tecken
     cmpb $32, %al               # jämför med mellanslag
@@ -50,6 +50,7 @@ check_sign:
 
 positive_number:
     # hoppa över plustecken
+    movq $1, %rbx                      
     incq %rsi
     jmp read_digits
 
@@ -62,7 +63,7 @@ negative_number:
 read_digits:
     xorq %rax, %rax             
     xorq %rdx, %rdx             # rensa register så vi alltid får ett nytt värde
-    xorq %rcx, %rcx             
+    xorq %rcx, %rcx          
 read_loop:
     movb (%rdi,%rsi,1), %al
     cmpb $48, %al               # jämför med 0
@@ -90,7 +91,7 @@ finish:
     negq %rcx
 
 return_result:
-    movq %rcx, %rax             # ladda resultat för retur
+    movq %rcx, %rax             # ladda in talet för retur
     ret
 
 callInImage:
@@ -170,3 +171,18 @@ getOutPos:
 
 .global setOutPos
 setOutPos:
+    movsxd %edi, %rdi
+    cmpq $0, %rdi
+    jl outMin
+    cmpq $64, %rdi
+    jg outMax
+    movq %rdi, outPos
+    ret
+
+outMin:
+movq $0, outPos
+ret
+
+outMax:
+movq $64, outPos
+ret
