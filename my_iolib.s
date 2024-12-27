@@ -19,9 +19,9 @@ getText:
 
 .global getChar
 getChar:
-# movq inBuf, %rax
-# movq inPos, %rcx
-# movzbq (%rax,%rcx), %rax
+leaq inBuf(%rip), %rax
+movq inPos, %rcx
+movzbq (%rax,%rcx), %rax
 addq $1, inPos
 ret
  
@@ -52,16 +52,32 @@ outImage:
 
 .global putInt
 putInt:
+//leaq outBuf(%rip), %rax
+//movq outPos, %rcx
+movq %rax, %rdi
+movq $10, %rcx
+xor %rdx, %rdx
+divq %rcx
+addq $0x30, %rdx
+//PUSH
+//go to putInt if rax more than 0
+//POP
+leaq outBuf(%rip), %rax
+movq outPos, %rcx
+movb %dil, (%rax,%rcx)
+addq $1, outPos
+//return to line 64 (POP)
+ret
 
 .global putText
 putText:
 
 .global putChar
 putChar:
-movq inBuf, %rax
-movq inPos, %rcx
+leaq outBuf(%rip), %rax
+movq outPos, %rcx
 movb %dil, (%rax,%rcx)
-# addq $1, inPos
+addq $1, outPos
 ret
 
 .global getOutPos
