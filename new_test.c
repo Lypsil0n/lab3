@@ -52,11 +52,11 @@ int main(){
     // och lägger de lästa tecknen i utbufferten.
     // Lägger även till ett nyradstecken och talet 125 i utbufferten,
     // och skriver sedan ut alltihopa i terminalen.
-//     getText(buf, 12); 
-     putText(buf);
-// //    putChar('\n');
-//     // putInt(125);    
-//     outImage(); 
+    getText(buf, 12); 
+    putText(buf);
+    //putChar('\n');
+    // putInt(125);    
+    outImage(); 
 
     // Lägger till sist avslutningstext i utmatningsbufferten,
     // och visar texten i terminalen.

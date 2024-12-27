@@ -28,7 +28,7 @@ getInt:
     movq inPos(%rip), %rsi             # ladda nuvarande inPos
 
     cmpb $0, (%rdi,%rsi,1)             # kolla ifall bufferten är tom
-    je callInImage
+    je getInt_callInImage
 
 parse_number:
     movq $1, %rbx               # default är positivt tal
@@ -49,14 +49,14 @@ check_sign:
     jmp read_digits
 
 positive_number:
-    # hoppa över plustecken
+    # markera tal som positivt
     movq $1, %rbx                      
     incq %rsi
     jmp read_digits
 
 negative_number:
     # markera tal som negativt
-    movq $-1, %rbx              # gör talet negativt
+    movq $-1, %rbx              
     incq %rsi
     jmp read_digits
 
@@ -94,7 +94,7 @@ return_result:
     movq %rcx, %rax             # ladda in talet för retur
     ret
 
-callInImage:
+getInt_callInImage:
     call inImage
     movq $0, %rsi               # återställ bufferposition
     movq %rsi, inPos(%rip)
@@ -102,6 +102,67 @@ callInImage:
 
 .global getText
 getText:
+    movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8
+    movl %esi, %r9d            # n (antalet tecken att läsa) -> %r9d
+
+    # Load input buffer position and base
+    movq inPos(%rip), %rcx     # ladda inPos
+    leaq inBuf(%rip), %rdx     # ladda inBuf
+    addq %rcx, %rdx            # justera pekare till aktuell position: %rdx = inBuf + inPos
+
+    # skippa whitespace
+strip_whitespace:
+    movb (%rdx), %al           # ladda nuvarande tecken
+    cmpb $' ', %al             # kolla om det är ett mellanslag, tab eller newline
+    je increment               # om mellanslag, tab eller newline, gå till increment
+    cmpb $'\t', %al            
+    je increment               
+    cmpb $'\n', %al            
+    je increment               
+    jmp determine_copy_size    # om inget mellanslag/tab/newline, bestäm hur många tecken som ska kopieras
+
+increment:
+    incq %rdx                  # flytta pekare till nästa tecken i inBuf
+    subq inBuf(%rip), %rdx     # uppdatera inPos
+    movq %rdx, inPos(%rip)     # uppdatera inPos till nya positionen
+    addq inBuf(%rip), %rdx     # återställ inBuf pekaren
+    jmp strip_whitespace        # fortsätt tills vi hittar ett tecken som inte är whitespace
+
+determine_copy_size:
+    # beräkna hur många tecken som ska kopieras
+    movq %r9, %rax             # bestäm återstående storlek för inBuf
+    subq %rcx, %rax            # beräkna tillgängliga tecken i bufferten
+    cmpq %rax, %r9             # jämför tillgängliga tecken med n
+    jbe use_available          # om tillgängliga tecken större eller lika med n, använd alla
+    movq %r9, %rax             # annars använd bara n tecken
+
+use_available:
+    movq %rax, %r10            # spara antalet tecken som ska kopieras i %r10
+    testq %r10, %r10           # kontrollera om det finns tecken att kopiera
+    jz null_terminate          # om inget ska kopieras, hoppa till null-terminering
+
+copy_loop:
+    movb (%rdx), %al           # ladda tecken från inBuf
+    movb %al, (%r8)            # lagar i destiantionsbuffert
+    incq %rdx                  # öka pekaren för inBuf (input buffer)
+    incq %r8                   # öka pekaren för buf (output buffer)
+    decq %r10                  # minska antalet tecken som ska kopieras
+    jnz copy_loop              # upprepa tills alla tecken är kopierade
+
+null_terminate:
+    movb $0, (%r8)             # nullterminera strängen
+    subq inBuf(%rip), %rdx     # beräkna ny inPos
+    movq %rdx, inPos(%rip)     # uppdatera inPos
+
+    
+    movq %rax, %rax            # returnera antalet överförda tecken
+    ret                        
+
+getText_callInImage:
+    call inImage
+    movq $0, %rsi              
+    movq %rsi, inPos(%rip)     
+    jmp getText                
 
 .global getChar
 getChar:
@@ -180,9 +241,9 @@ setOutPos:
     ret
 
 outMin:
-movq $0, outPos
-ret
+    movq $0, outPos
+    ret
 
 outMax:
-movq $64, outPos
-ret
+    movq $64, outPos
+    ret
