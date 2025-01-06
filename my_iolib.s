@@ -73,7 +73,7 @@ read_loop:
 
     # konvertera ASCII-tecken till heltal
     subb $48, %al               # omvandla ASCII till int
-    movzbq %al, %rdx            # "zero extend", rensa bort högre bits
+    movzbq %al, %rdx            # "zero extend", rensa bort så vi bara har heltalet
     imulq $10, %rcx, %rcx       # multiplicera med 10 för att stega upp från ental till tiotal osv
     addq %rdx, %rcx             # lägg till talet i resultatet
 
@@ -144,7 +144,7 @@ use_available:
 
 copy_loop:
     movb (%rdx), %al           # ladda tecken från inBuf
-    movb %al, (%r8)            # lagar i destiantionsbuffert
+    movb %al, (%r8)            # lagra i destiantionsbuffert
     incq %rdx                  # öka pekaren för inBuf (input buffer)
     incq %r8                   # öka pekaren för buf (output buffer)
     decq %r10                  # minska antalet tecken som ska kopieras
@@ -155,7 +155,6 @@ null_terminate:
     subq inBuf(%rip), %rdx     # beräkna ny inPos
     movq %rdx, inPos(%rip)     # uppdatera inPos
 
-    
     movq %rax, %rax            # returnera antalet överförda tecken
     ret                        
 
@@ -165,14 +164,35 @@ getText_callInImage:
 
 .global getChar
 getChar:
+    leaq inBuf(%rip), %rax
+    movq inPos, %rcx
+    movzbq (%rax,%rcx), %rax
+    addq $1, inPos
+    ret
  
 .global getInPos
 getInPos:
     movq inPos, %rax
     ret
 
+
 .global setInPos
 setInPos:
+    movsxd %edi, %rdi
+    cmpq $0, %rdi
+    jl inMin
+    cmpq $64, %rdi
+    jg inMax
+    movq %rdi, inPos
+    ret
+
+inMin:
+    movq $0, inPos
+    ret
+
+inMax:
+    movq $64, inPos
+    ret
 
 # Utmatning
 .global outImage
@@ -194,7 +214,61 @@ outImage:
 
 .global putInt
 putInt:
+    # Load the integer (n) from %rdi and initialize the buffer position
+    movq %rdi, %rax          # %rdi contains the integer to be written (n)
+    leaq outBuf(%rip), %rdi  # Load the output buffer address into %rdi
+    movq outPos(%rip), %rsi  # Load the current outPos into %rsi
 
+    # Special case for zero, handle it directly
+    testq %rbx, %rbx         # Check if the number is zero
+    jz .print_zero           # If zero, go to print_zero
+
+    # Convert the integer to a string (storing digits in reverse order)
+convert_loop:
+    xorq %rdx, %rdx          # Clear the remainder register
+    movq $10, %rcx           # Set divisor to 10
+    divq %rcx                # Divide %rbx by 10 (quotient in %rax, remainder in %rdx)
+    addb $'0', %dl           # Convert the remainder to ASCII ('0' to '9')
+    movb %dl, (%rdi, %rsi, 1) # Store the ASCII character in the output buffer
+    incq %rsi                # Increment the buffer position
+    testq %rax, %rax         # Check if the quotient is zero
+    jnz convert_loop         # If quotient is not zero, continue the loop
+
+    # At this point, %rsi is past the last character
+    # Save the current position before reversing
+    movq %rsi, %rcx          # %rcx now holds the end of the string (one past the last character)
+
+    # Reverse the string (since it is stored in reverse order)
+reverse_string:
+    decq %rcx                # Move to the last written character (point to the last character)
+    cmpq outBuf(%rip), %rcx   # Compare the start of the buffer with the current position
+    jl .done_reverse         # If %rcx points to the start, we’re done
+
+    # Swap characters at %rsi (start) and %rcx (end)
+    movb (%rdi, %rsi, 1), %al # Load byte at start into %al
+    movb (%rdi, %rcx, 1), %bl # Load byte at end into %bl
+    movb %bl, (%rdi, %rsi, 1) # Store byte from end at start
+    movb %al, (%rdi, %rcx, 1) # Store byte from start at end
+
+    # Move start pointer forward, end pointer backward
+    incq %rsi
+    decq %rcx
+    jmp reverse_string
+
+.done_reverse:
+    # Update outPos to the current buffer position (now pointing to the first free byte after the integer string)
+    movq %rsi, outPos(%rip)  # Store the current buffer position in outPos
+    ret
+
+.print_zero:
+    # Handle the special case where the integer is zero
+    movb $'0', (%rdi, %rsi, 1)  # Store '0' in the buffer
+    incq %rsi                  # Increment the buffer position
+    movq %rsi, outPos(%rip)     # Update outPos
+    ret
+
+
+                                    
 .global putText
 putText:
     mov %rdi, %rbx                      # %rdi innehåller strängen som ska läsas
@@ -207,21 +281,20 @@ putText_loop:
     je putText_done                     # om null, gå till slutet
 
     cmp $64, %rsi                       # kolla ifall bufferten är full
-    je flush_buffer                     # om den är tom, flusha bufferten
+    je putText_outImage                 # om den är tom, flusha bufferten
 
     movb %al, (%rdi, %rsi, 1)           # skriv tecknet till utbufferten
     inc %rsi                            # öka nuvarande position i bufferten
     inc %rbx                            # gå till nästa tecken
     jmp putText_loop                    # repetera
 
-flush_buffer:
+putText_outImage:
     call outImage              # skriv ut bufferten
     jmp putText_loop           # fortsätt
 
 putText_done:
     mov %rsi, outPos(%rip)              # uppdatera outPos
     ret
-
 
 .global putChar
 putChar:
