@@ -5,7 +5,6 @@
 #include "my_iolib.h"
 
 
-
 int main(){
     char headMsg[] = "Start av testprogram. Skriv in 5 tal!";
     char endMsg[] = "Testprogram slut";

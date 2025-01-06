@@ -96,8 +96,6 @@ return_result:
 
 getInt_callInImage:
     call inImage
-    movq $0, %rsi               # återställ bufferposition
-    movq %rsi, inPos(%rip)
     jmp getInt
 
 .global getText
@@ -109,6 +107,9 @@ getText:
     movq inPos(%rip), %rcx     # ladda inPos
     leaq inBuf(%rip), %rdx     # ladda inBuf
     addq %rcx, %rdx            # justera pekare till aktuell position: %rdx = inBuf + inPos
+
+    cmpb $0, (%rdx)             # kolla ifall bufferten är tom
+    je getText_callInImage
 
     # skippa whitespace
 strip_whitespace:
@@ -160,8 +161,6 @@ null_terminate:
 
 getText_callInImage:
     call inImage
-    movq $0, %rsi              
-    movq %rsi, inPos(%rip)     
     jmp getText                
 
 .global getChar
@@ -178,14 +177,19 @@ setInPos:
 # Utmatning
 .global outImage
 outImage:
-    subq $8, %rsp
+    subq $16, %rsp              
 
-    leaq outBuf(%rip), %rdi
+    leaq outBuf(%rip), %rdi     # ladda outBuf
 
-    call puts
-    
-    movq $0, outPos(%rip) 
-    addq $8, %rsp 
+    movq outPos(%rip), %rcx     # ladda outPos
+
+    movb $0, (%rdi, %rcx, 1)    # nullterminera strängen
+
+    call puts                  # skriv ut
+
+    movq $0, outPos(%rip)      # återställ outPos
+
+    addq $16, %rsp             
     ret
 
 .global putInt
@@ -211,23 +215,25 @@ putText_loop:
     jmp putText_loop                    # repetera
 
 flush_buffer:
-    movb $0, (%rdi, %rsi, 1)   # nullterminate bufferten
     call outImage              # skriv ut bufferten
-
     jmp putText_loop           # fortsätt
 
 putText_done:
     mov %rsi, outPos(%rip)              # uppdatera outPos
-    movb $0, (%rdi, %rsi, 1)
     ret
 
 
 .global putChar
 putChar:
+    leaq outBuf(%rip), %rax
+    movq outPos, %rcx
+    movb %dil, (%rax,%rcx)
+    addq $1, outPos
+    ret
 
 .global getOutPos
 getOutPos:
-    movq outPos, %rax
+    movq outPos(%rip), %rax
     ret
 
 .global setOutPos
@@ -237,7 +243,7 @@ setOutPos:
     jl outMin
     cmpq $64, %rdi
     jg outMax
-    movq %rdi, outPos
+    movq %rdi, outPos(%rip)
     ret
 
 outMin:

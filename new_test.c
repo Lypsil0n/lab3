@@ -34,19 +34,19 @@ int main(){
         }
         sum += temp;
         //putInt(temp);
-        //putChar('+');
+        putChar('+');
     }
     pos = getOutPos();
     pos--;
     setOutPos(pos);
 
-    printf("%d\n", sum);
+    //printf("%d\n", sum);
 
     // // Lägger till summan i uträkningen i utbufferten,
     // // och skriver uträkningen till terminalskärmen.
-    // putChar('=');
-    // putInt(sum);
-    //outImage();
+    putChar('=');
+    //putInt(sum);
+    outImage();
 
     // Försöker läsa ytterligare 12 tecken från inbufferten,
     // och lägger de lästa tecknen i utbufferten.
@@ -55,7 +55,7 @@ int main(){
     getText(buf, 12); 
     putText(buf);
     //putChar('\n');
-    // putInt(125);    
+    //putInt(125);    
     outImage(); 
 
     // Lägger till sist avslutningstext i utmatningsbufferten,
