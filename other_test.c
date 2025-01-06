@@ -5,12 +5,27 @@
 
 int main()
 {   
-    int i = 0;
-    putInt(12345);
-    i = getOutPos();
-    printf("%d\n", i);
+    long long sum = 0;
+    long long temp;
+    unsigned int pos, count;
 
+    for (count=5; count>0; count-- ){
+        temp = getInt();
+        if (temp < 0){
+            pos = getOutPos();
+            pos--;
+            setOutPos(pos);
+        }
+        sum += temp;
+        putInt(temp);
+        putChar('+');
+    }
+    pos = getOutPos();
+    pos--;
+    setOutPos(pos);
+
+    putChar('=');
+    putInt(sum);
     outImage();
-
 }   
 

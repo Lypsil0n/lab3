@@ -214,6 +214,7 @@ outImage:
 
 .global putInt
 putInt:
+    movsxd %edi, %rdi
     # Load the integer (n) from %rdi and initialize the buffer position
     movq %rdi, %rax          # %rdi contains the integer to be written (n)
     leaq outBuf(%rip), %rdi  # Load the output buffer address into %rdi
@@ -223,41 +224,34 @@ putInt:
     testq %rbx, %rbx         # Check if the number is zero
     jz .print_zero           # If zero, go to print_zero
 
-    # Convert the integer to a string (storing digits in reverse order)
+    movq $0, %rbx
+
+    # Convert the integer to a string (push digits to the stack)
 convert_loop:
     xorq %rdx, %rdx          # Clear the remainder register
     movq $10, %rcx           # Set divisor to 10
     divq %rcx                # Divide %rbx by 10 (quotient in %rax, remainder in %rdx)
     addb $'0', %dl           # Convert the remainder to ASCII ('0' to '9')
-    movb %dl, (%rdi, %rsi, 1) # Store the ASCII character in the output buffer
-    incq %rsi                # Increment the buffer position
+    
+    incq %rbx
+
+    pushq %rdx                # Push the ASCII character onto the stack
+
     testq %rax, %rax         # Check if the quotient is zero
     jnz convert_loop         # If quotient is not zero, continue the loop
 
-    # At this point, %rsi is past the last character
-    # Save the current position before reversing
-    movq %rsi, %rcx          # %rcx now holds the end of the string (one past the last character)
 
-    # Reverse the string (since it is stored in reverse order)
-reverse_string:
-    decq %rcx                # Move to the last written character (point to the last character)
-    cmpq outBuf(%rip), %rcx   # Compare the start of the buffer with the current position
-    jl .done_reverse         # If %rcx points to the start, we’re done
+    # Pop the digits from the stack and write them to the buffer
+pop_loop:
+    popq %rdx                 # Pop a digit from the stack
+    movb %dl, (%rdi, %rsi, 1) # Store the ASCII character in the output buffer
+    incq %rsi                 # Increment the buffer position
+    decq %rbx
+    testq %rbx, %rbx          # Check if the stack is empty
+    jnz pop_loop              # If the stack is not empty, continue popping
 
-    # Swap characters at %rsi (start) and %rcx (end)
-    movb (%rdi, %rsi, 1), %al # Load byte at start into %al
-    movb (%rdi, %rcx, 1), %bl # Load byte at end into %bl
-    movb %bl, (%rdi, %rsi, 1) # Store byte from end at start
-    movb %al, (%rdi, %rcx, 1) # Store byte from start at end
-
-    # Move start pointer forward, end pointer backward
-    incq %rsi
-    decq %rcx
-    jmp reverse_string
-
-.done_reverse:
     # Update outPos to the current buffer position (now pointing to the first free byte after the integer string)
-    movq %rsi, outPos(%rip)  # Store the current buffer position in outPos
+    movq %rsi, outPos(%rip)   # Store the current buffer position in outPos
     ret
 
 .print_zero:
@@ -266,9 +260,7 @@ reverse_string:
     incq %rsi                  # Increment the buffer position
     movq %rsi, outPos(%rip)     # Update outPos
     ret
-
-
-                                    
+                         
 .global putText
 putText:
     mov %rdi, %rbx                      # %rdi innehåller strängen som ska läsas

@@ -33,7 +33,7 @@ int main(){
             setOutPos(pos);
         }
         sum += temp;
-        //putInt(temp);
+        putInt(temp);
         putChar('+');
     }
     pos = getOutPos();
@@ -45,7 +45,7 @@ int main(){
     // // Lägger till summan i uträkningen i utbufferten,
     // // och skriver uträkningen till terminalskärmen.
     putChar('=');
-    //putInt(sum);
+    putInt(sum);
     outImage();
 
     // Försöker läsa ytterligare 12 tecken från inbufferten,
@@ -55,7 +55,7 @@ int main(){
     getText(buf, 12); 
     putText(buf);
     //putChar('\n');
-    //putInt(125);    
+    putInt(125);    
     outImage(); 
 
     // Lägger till sist avslutningstext i utmatningsbufferten,
