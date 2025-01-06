@@ -214,53 +214,65 @@ outImage:
 
 .global putInt
 putInt:
+    pushq %rbx              # Save %rbx on the stack (callee-saved)
     movsxd %edi, %rdi
     # Load the integer (n) from %rdi and initialize the buffer position
-    movq %rdi, %rax          # %rdi contains the integer to be written (n)
-    leaq outBuf(%rip), %rdi  # Load the output buffer address into %rdi
-    movq outPos(%rip), %rsi  # Load the current outPos into %rsi
+    movq %rdi, %rax         # %rdi contains the integer to be written (n)
+    leaq outBuf(%rip), %rdi # Load the output buffer address into %rdi
+    movq outPos(%rip), %rsi # Load the current outPos into %rsi
 
     # Special case for zero, handle it directly
-    testq %rbx, %rbx         # Check if the number is zero
-    jz .print_zero           # If zero, go to print_zero
+    testq %rbx, %rbx        # Check if the number is zero
+    jz putInt_print_zero          # If zero, go to print_zero 
 
-    movq $0, %rbx
+    movq $0, %rbx           # Initialize %rbx to count digits
+
+    cmp $0, %rax
+    jl putInt_negative
+
+    jmp putInt_convert_loop
+
+putInt_negative:
+    movb $45, (%rdi, %rsi, 1)
+    incq %rsi
+    negq %rax
 
     # Convert the integer to a string (push digits to the stack)
-convert_loop:
-    xorq %rdx, %rdx          # Clear the remainder register
-    movq $10, %rcx           # Set divisor to 10
-    divq %rcx                # Divide %rbx by 10 (quotient in %rax, remainder in %rdx)
-    addb $'0', %dl           # Convert the remainder to ASCII ('0' to '9')
+putInt_convert_loop:
+    xorq %rdx, %rdx         # Clear the remainder register
+    movq $10, %rcx          # Set divisor to 10
+    divq %rcx               # Divide %rax by 10 (quotient in %rax, remainder in %rdx)
+    addb $'0', %dl          # Convert the remainder to ASCII ('0' to '9')
     
-    incq %rbx
+    incq %rbx               # Increment digit counter
 
-    pushq %rdx                # Push the ASCII character onto the stack
+    pushq %rdx              # Push the ASCII character onto the stack
 
-    testq %rax, %rax         # Check if the quotient is zero
-    jnz convert_loop         # If quotient is not zero, continue the loop
-
+    testq %rax, %rax        # Check if the quotient is zero
+    jnz putInt_convert_loop        # If quotient is not zero, continue the loop
 
     # Pop the digits from the stack and write them to the buffer
-pop_loop:
-    popq %rdx                 # Pop a digit from the stack
+putInt_pop_loop:
+    popq %rdx               # Pop a digit from the stack
     movb %dl, (%rdi, %rsi, 1) # Store the ASCII character in the output buffer
-    incq %rsi                 # Increment the buffer position
+    incq %rsi               # Increment the buffer position
     decq %rbx
-    testq %rbx, %rbx          # Check if the stack is empty
-    jnz pop_loop              # If the stack is not empty, continue popping
+    testq %rbx, %rbx        # Check if the stack is empty
+    jnz putInt_pop_loop            # If the stack is not empty, continue popping
 
     # Update outPos to the current buffer position (now pointing to the first free byte after the integer string)
-    movq %rsi, outPos(%rip)   # Store the current buffer position in outPos
+    movq %rsi, outPos(%rip) # Store the current buffer position in outPos
+    popq %rbx               # Restore %rbx (callee-saved)
     ret
 
-.print_zero:
+putInt_print_zero:
     # Handle the special case where the integer is zero
     movb $'0', (%rdi, %rsi, 1)  # Store '0' in the buffer
     incq %rsi                  # Increment the buffer position
     movq %rsi, outPos(%rip)     # Update outPos
+    popq %rbx                   # Restore %rbx (callee-saved)
     ret
-                         
+       
 .global putText
 putText:
     mov %rdi, %rbx                      # %rdi innehåller strängen som ska läsas

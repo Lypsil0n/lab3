@@ -40,8 +40,6 @@ int main(){
     pos--;
     setOutPos(pos);
 
-    //printf("%d\n", sum);
-
     // // Lägger till summan i uträkningen i utbufferten,
     // // och skriver uträkningen till terminalskärmen.
     putChar('=');
