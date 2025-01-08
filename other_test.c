@@ -4,8 +4,9 @@
 //test
 
 int main()
-{   
-    putInt(-45);
+{
+    char buf[64];
+    getText(buf, 12);
+    putText(buf);
     outImage();
-}   
-
+}

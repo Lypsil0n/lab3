@@ -100,20 +100,19 @@ getInt_callInImage:
 
 .global getText
 getText:
+    # Load input buffer position and base
+    leaq inBuf(%rip), %rdx     # ladda inBuf
+    movq inPos(%rip), %rcx     # ladda inPos
+
+    cmpb $0, (%rdx,%rcx,1)              # kolla ifall bufferten är tom
+    je getText_callInImage
+
     movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8
     movl %esi, %r9d            # n (antalet tecken att läsa) -> %r9d
 
-    # Load input buffer position and base
-    movq inPos(%rip), %rcx     # ladda inPos
-    leaq inBuf(%rip), %rdx     # ladda inBuf
-    addq %rcx, %rdx            # justera pekare till aktuell position: %rdx = inBuf + inPos
-
-    cmpb $0, (%rdx)             # kolla ifall bufferten är tom
-    je getText_callInImage
-
     # skippa whitespace
 strip_whitespace:
-    movb (%rdx), %al           # ladda nuvarande tecken
+    movb (%rdx, %rcx, 1), %al           # ladda nuvarande tecken
     cmpb $' ', %al             # kolla om det är ett mellanslag, tab eller newline
     je increment               # om mellanslag, tab eller newline, gå till increment
     cmpb $'\t', %al            
@@ -123,11 +122,9 @@ strip_whitespace:
     jmp determine_copy_size    # om inget mellanslag/tab/newline, bestäm hur många tecken som ska kopieras
 
 increment:
-    incq %rdx                  # flytta pekare till nästa tecken i inBuf
-    subq inBuf(%rip), %rdx     # uppdatera inPos
-    movq %rdx, inPos(%rip)     # uppdatera inPos till nya positionen
-    addq inBuf(%rip), %rdx     # återställ inBuf pekaren
-    jmp strip_whitespace        # fortsätt tills vi hittar ett tecken som inte är whitespace
+    incq %rcx                  # move to the next character in inBuf
+    movq %rcx, inPos(%rip)     # update inPos
+    jmp strip_whitespace       # continue skipping whitespace
 
 determine_copy_size:
     # beräkna hur många tecken som ska kopieras
@@ -140,10 +137,10 @@ determine_copy_size:
 use_available:
     movq %rax, %r10            # spara antalet tecken som ska kopieras i %r10
     testq %r10, %r10           # kontrollera om det finns tecken att kopiera
-    jz null_terminate          # om inget ska kopieras, hoppa till null-terminering
+    jz null_terminate          # om inget ska kopieras, hoppa till slutet
 
 copy_loop:
-    movb (%rdx), %al           # ladda tecken från inBuf
+    movb (%rdx, %rcx, 1), %al  # ladda tecken från inBuf
     movb %al, (%r8)            # lagra i destiantionsbuffert
     incq %rdx                  # öka pekaren för inBuf (input buffer)
     incq %r8                   # öka pekaren för buf (output buffer)
@@ -152,9 +149,7 @@ copy_loop:
 
 null_terminate:
     movb $0, (%r8)             # nullterminera strängen
-    subq inBuf(%rip), %rdx     # beräkna ny inPos
     movq %rdx, inPos(%rip)     # uppdatera inPos
-
     movq %rax, %rax            # returnera antalet överförda tecken
     ret                        
 
@@ -165,16 +160,22 @@ getText_callInImage:
 .global getChar
 getChar:
     leaq inBuf(%rip), %rax
-    movq inPos, %rcx
+    movq inPos(%rip), %rcx
+
+    cmpb $0, (%rax,%rcx,1)             
+    je getChar_callInImage
+
     movzbq (%rax,%rcx), %rax
     addq $1, inPos
     ret
+getChar_callInImage:
+    call inImage
+    jmp getChar
  
 .global getInPos
 getInPos:
     movq inPos, %rax
     ret
-
 
 .global setInPos
 setInPos:
@@ -196,8 +197,7 @@ inMax:
 
 # Utmatning
 .global outImage
-outImage:
-    subq $16, %rsp              
+outImage:       
 
     leaq outBuf(%rip), %rdi     # ladda outBuf
 
@@ -208,8 +208,7 @@ outImage:
     call puts                  # skriv ut
 
     movq $0, outPos(%rip)      # återställ outPos
-
-    addq $16, %rsp             
+        
     ret
 
 .global putInt
@@ -223,7 +222,7 @@ putInt:
 
     # Special case for zero, handle it directly
     testq %rbx, %rbx        # Check if the number is zero
-    jz putInt_print_zero          # If zero, go to print_zero 
+    jz putInt_print_zero    # If zero, go to print_zero 
 
     movq $0, %rbx           # Initialize %rbx to count digits
 
@@ -330,3 +329,4 @@ outMin:
 outMax:
     movq $64, outPos
     ret
+    
