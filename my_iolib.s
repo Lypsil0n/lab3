@@ -1,5 +1,5 @@
 .data
-    inBuf: .space 64
+    inBuf: .space 64                # inbuffert och utbuffert med positoner
     inPos: .quad 0
 
     outBuf: .space 64
@@ -9,17 +9,15 @@
 # Inmatning
 .global inImage
 inImage:
-    subq $8, %rsp
 
-    leaq inBuf(%rip), %rdi
-    movq $63, %rsi
-    movq stdin, %rdx
+    leaq inBuf(%rip), %rdi          # ladda inbufferten
+    movq $63, %rsi                  # ladda antal tecken
+    movq stdin, %rdx                # ladda stdin
 
     call fgets
     
-    movq $0, inPos(%rip)
+    movq $0, inPos(%rip)            # återställ inpos
 
-    addq $8, %rsp 
     ret
 
 .global getInt
@@ -31,7 +29,7 @@ getInt:
     je getInt_callInImage
 
 parse_number:
-    movq $1, %rbx               # default är positivt tal
+    movq $1, %rbx               # default är positivt tal (inget tecken = positivt tal)
 skip_whitespace:
     movb (%rdi,%rsi,1), %al     # ladda tecken
     cmpb $32, %al               # jämför med mellanslag
@@ -41,7 +39,7 @@ skip_whitespace:
 
 check_sign:
     # kolla efter plus-eller minustecken
-    movb (%rdi,%rsi,1), %al
+    movb (%rdi,%rsi,1), %al     # ladda tecken
     cmpb $43, %al               # jämför med plus
     je positive_number
     cmpb $45, %al               # jämför med minus
@@ -73,7 +71,7 @@ read_loop:
 
     # konvertera ASCII-tecken till heltal
     subb $48, %al               # omvandla ASCII till int
-    movzbq %al, %rdx            # "zero extend", rensa bort så vi bara har heltalet
+    movzbq %al, %rdx            # "zero extend", lägger översta 56 bitarna till 0 så vi bara har heltalet ("trycker in" ett 8 bitars tal i ett 64 bitars register)
     imulq $10, %rcx, %rcx       # multiplicera med 10 för att stega upp från ental till tiotal osv
     addq %rdx, %rcx             # lägg till talet i resultatet
 
@@ -98,17 +96,17 @@ getInt_callInImage:
     call inImage
     jmp getInt
 
+
 .global getText
 getText:
-    # Load input buffer position and base
     leaq inBuf(%rip), %rdx     # ladda inBuf
     movq inPos(%rip), %rcx     # ladda inPos
 
     cmpb $0, (%rdx,%rcx,1)              # kolla ifall bufferten är tom
     je getText_callInImage
 
-    movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8
-    movl %esi, %r9d            # n (antalet tecken att läsa) -> %r9d
+    movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8 (64 bitars)
+    movl %esi, %r9d            # n (antalet tecken att läsa) -> %r9d (32 bitars)
 
     # skippa whitespace
 strip_whitespace:
@@ -122,8 +120,8 @@ strip_whitespace:
     jmp determine_copy_size    # om inget mellanslag/tab/newline, bestäm hur många tecken som ska kopieras
 
 increment:
-    incq %rcx                  # move to the next character in inBuf
-    movq %rcx, inPos(%rip)     # update inPos
+    incq %rcx                  # öka inPos
+    movq %rcx, inPos(%rip)     # uppdatera inPos
     jmp strip_whitespace       # continue skipping whitespace
 
 determine_copy_size:
@@ -131,42 +129,43 @@ determine_copy_size:
     movq %r9, %rax             # bestäm återstående storlek för inBuf
     subq %rcx, %rax            # beräkna tillgängliga tecken i bufferten
     cmpq %rax, %r9             # jämför tillgängliga tecken med n
-    jbe use_available          # om tillgängliga tecken större eller lika med n, använd alla
-    movq %r9, %rax             # annars använd bara n tecken
+    jbe use_available          # om tillgängliga tecken större eller lika med n, använd n tecken
+    movq %r9, %rax             # annars använd så många som finns kvar i inBuf
 
 use_available:
     movq %rax, %r10            # spara antalet tecken som ska kopieras i %r10
     testq %r10, %r10           # kontrollera om det finns tecken att kopiera
-    jz null_terminate          # om inget ska kopieras, hoppa till slutet
+    jz end                      # om inget ska kopieras, hoppa till slutet
 
 copy_loop:
     movb (%rdx, %rcx, 1), %al  # ladda tecken från inBuf
     movb %al, (%r8)            # lagra i destiantionsbuffert
-    incq %rdx                  # öka pekaren för inBuf (input buffer)
-    incq %r8                   # öka pekaren för buf (output buffer)
+    incq %rcx                  # öka index för inbufferten (inPos)
+    incq %r8                   # öka index för buf (strängen som ska kopieras)
     decq %r10                  # minska antalet tecken som ska kopieras
     jnz copy_loop              # upprepa tills alla tecken är kopierade
 
-null_terminate:
+end:
     movb $0, (%r8)             # nullterminera strängen
-    movq %rdx, inPos(%rip)     # uppdatera inPos
-    movq %rax, %rax            # returnera antalet överförda tecken
+    movq %rcx, inPos(%rip)     # uppdatera inPos
     ret                        
 
 getText_callInImage:
     call inImage
-    jmp getText                
+    jmp getText       
+              
 
 .global getChar
 getChar:
-    leaq inBuf(%rip), %rax
-    movq inPos(%rip), %rcx
+    leaq inBuf(%rip), %rax              # ladda inBuf
+    movq inPos(%rip), %rcx              # ladda inPos
 
-    cmpb $0, (%rax,%rcx,1)             
+    cmpb $0, (%rax,%rcx,1)              # ifall inBuf är tom, kalla inImage
     je getChar_callInImage
 
-    movzbq (%rax,%rcx), %rax
-    addq $1, inPos
+    movzbq (%rax,%rcx), %rax            # ladda tecknet till rax
+    incq %rcx                                   
+    movq %rcx, inPos(%rip)              # öka och uppdatera inPos
     ret
 getChar_callInImage:
     call inImage
@@ -174,16 +173,16 @@ getChar_callInImage:
  
 .global getInPos
 getInPos:
-    movq inPos, %rax
+    movq inPos, %rax                    # flytta inPos till rax
     ret
 
 .global setInPos
 setInPos:
-    movsxd %edi, %rdi
-    cmpq $0, %rdi
-    jl inMin
+    movsxd %edi, %rdi                   # sign extend edi till 64-bitars längd
+    cmpq $0, %rdi                       
+    jl inMin                            # compare ifall parametern är mindre än 0
     cmpq $64, %rdi
-    jg inMax
+    jg inMax                            # compare ifall parametern är större än 64
     movq %rdi, inPos
     ret
 
@@ -213,64 +212,68 @@ outImage:
 
 .global putInt
 putInt:
-    pushq %rbx              # Save %rbx on the stack (callee-saved)
-    movsxd %edi, %rdi
-    # Load the integer (n) from %rdi and initialize the buffer position
-    movq %rdi, %rax         # %rdi contains the integer to be written (n)
-    leaq outBuf(%rip), %rdi # Load the output buffer address into %rdi
-    movq outPos(%rip), %rsi # Load the current outPos into %rsi
+    pushq %rbx              # pusha rbx till stacken
+    movsxd %edi, %rdi       # sign extend edi till 64-bitars längd
 
-    # Special case for zero, handle it directly
-    testq %rbx, %rbx        # Check if the number is zero
-    jz putInt_print_zero    # If zero, go to print_zero 
+    movq %rdi, %rax         # flytta talet till rax
+    leaq outBuf(%rip), %rdi # ladda outBuf
+    movq outPos(%rip), %rsi # ladda outPos
 
-    movq $0, %rbx           # Initialize %rbx to count digits
+    cmp $64, %rsi           # kolla ifall bufferten är full
+    je putInt_outImage
 
-    cmp $0, %rax
-    jl putInt_negative
+    # specialfall för talet 0
+    testq %rbx, %rbx        
+    jz putInt_print_zero    # ifall talet är 0, hoppa till specialfallet 
 
-    jmp putInt_convert_loop
+    movq $0, %rbx           # sätt rbx till 0 för att räkna ihop talet
+
+    cmp $0, %rax            
+    jl putInt_negative      # kolla ifall talet är negativt
+
+    jmp putInt_convert_loop # om inte, börja kolla talen
 
 putInt_negative:
-    movb $45, (%rdi, %rsi, 1)
-    incq %rsi
-    negq %rax
+    movb $45, (%rdi, %rsi, 1)  # sätt ett minustecken i bufferten framför talet
+    incq %rsi                  # öka outPos
+    negq %rax                  # gör själva talet positivt så att vi kan använda det
 
-    # Convert the integer to a string (push digits to the stack)
 putInt_convert_loop:
-    xorq %rdx, %rdx         # Clear the remainder register
-    movq $10, %rcx          # Set divisor to 10
-    divq %rcx               # Divide %rax by 10 (quotient in %rax, remainder in %rdx)
-    addb $'0', %dl          # Convert the remainder to ASCII ('0' to '9')
+    xorq %rdx, %rdx         # rensa så att vi har nytt tal varje gång
+    movq $10, %rcx          # bestäm delare till 10
+    divq %rcx               # dela rax med 10 (kvot i %rax, rest i %rdx)
+    addb $'0', %dl          # konvertera resten till ASCII
     
-    incq %rbx               # Increment digit counter
+    incq %rbx               # öka räknaren för att veta hur många tecken vi ska lägga tillbaka
 
-    pushq %rdx              # Push the ASCII character onto the stack
+    pushq %rdx              # pusha tecknet till stacken
 
-    testq %rax, %rax        # Check if the quotient is zero
-    jnz putInt_convert_loop        # If quotient is not zero, continue the loop
+    testq %rax, %rax        # kolla ifall kvoten är 0
+    jnz putInt_convert_loop        # ifall kvoten inte är 0, fortsätt loopa
 
-    # Pop the digits from the stack and write them to the buffer
 putInt_pop_loop:
-    popq %rdx               # Pop a digit from the stack
-    movb %dl, (%rdi, %rsi, 1) # Store the ASCII character in the output buffer
-    incq %rsi               # Increment the buffer position
+    popq %rdx               # poppa tecknet från stacken
+    movb %dl, (%rdi, %rsi, 1) # lägg in den outBuf
+    incq %rsi               # öka outPos
     decq %rbx
-    testq %rbx, %rbx        # Check if the stack is empty
-    jnz putInt_pop_loop            # If the stack is not empty, continue popping
+    testq %rbx, %rbx        # kolla ifall rbx är 0 (stacken tom)
+    jnz putInt_pop_loop            # ifall rbx inte är 0, fortsätta poppa 
 
-    # Update outPos to the current buffer position (now pointing to the first free byte after the integer string)
-    movq %rsi, outPos(%rip) # Store the current buffer position in outPos
-    popq %rbx               # Restore %rbx (callee-saved)
+    movq %rsi, outPos(%rip) # uppdatera outPos
+    popq %rbx               # poppa rbx
     ret
 
 putInt_print_zero:
-    # Handle the special case where the integer is zero
-    movb $'0', (%rdi, %rsi, 1)  # Store '0' in the buffer
-    incq %rsi                  # Increment the buffer position
-    movq %rsi, outPos(%rip)     # Update outPos
-    popq %rbx                   # Restore %rbx (callee-saved)
+    # specialfall där talet är 0
+    movb $'0', (%rdi, %rsi, 1)  # lagra 0 i bufferten
+    incq %rsi                  # öka outPos
+    movq %rsi, outPos(%rip)     # uppdatera outPos
+    popq %rbx                   # poppa rbx 
     ret
+
+putInt_outImage:
+    call outImage
+    jmp putInt
        
 .global putText
 putText:
@@ -301,25 +304,35 @@ putText_done:
 
 .global putChar
 putChar:
-    leaq outBuf(%rip), %rax
-    movq outPos, %rcx
-    movb %dil, (%rax,%rcx)
-    addq $1, outPos
+    leaq outBuf(%rip), %rax         # ladda outBuf
+    movq outPos(%rip), %rcx         # ladda outPos
+
+    cmp $64, %rcx           # kolla ifall bufferten är full
+    je putChar_outImage
+
+    movb %dil, (%rax,%rcx)     # lägg tecknet i outBuf
+
+    incq %rcx                   # öka outPos
+    movq %rcx, outPos(%rip)     # uppdatera outPos
     ret
+
+putChar_outImage:
+    call outImage
+    jmp putChar
 
 .global getOutPos
 getOutPos:
-    movq outPos(%rip), %rax
+    movq outPos(%rip), %rax     # flytta outPos till rax
     ret
 
 .global setOutPos
 setOutPos:
-    movsxd %edi, %rdi
-    cmpq $0, %rdi
-    jl outMin
+    movsxd %edi, %rdi           # sign extend edi till 64-bitars längd
+    cmpq $0, %rdi               
+    jl outMin                   # compare ifall parametern är mindre än 0
     cmpq $64, %rdi
-    jg outMax
-    movq %rdi, outPos(%rip)
+    jg outMax                   # compare ifall parametern är större än 64
+    movq %rdi, outPos(%rip)     # uppdatera outPos
     ret
 
 outMin:
