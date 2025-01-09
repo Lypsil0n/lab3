@@ -220,8 +220,8 @@ outImage:
 .global putInt
 putInt:
     movsxd %edi, %rdi       # sign extend edi till 64-bitars längd
-
     movq %rdi, %rax         # flytta talet till rax
+
     leaq outBuf(%rip), %rdi # ladda outBuf
     movq outPos(%rip), %rsi # ladda outPos
 
@@ -276,8 +276,12 @@ putInt_print_zero:
     ret
 
 putInt_outImage:
+    pushq %rax
+
     call outImage 
-    movq $0, %rsi               
+    movq $0, %rsi     
+
+    popq %rax      
     jmp putInt
        
 .global putText
