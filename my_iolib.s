@@ -219,11 +219,11 @@ outImage:
 
 .global putInt
 putInt:
-    movsxd %edi, %rdi       # sign extend edi till 64-bitars längd
-    movq %rdi, %rax         # flytta talet till rax
-
-    leaq outBuf(%rip), %rdi # ladda outBuf
+    leaq outBuf(%rip), %r9 # ladda outBuf
     movq outPos(%rip), %rsi # ladda outPos
+
+    #movsxd %edi, %rdi       # sign extend edi till 64-bitars längd
+    movq %rdi, %rax         # flytta talet till rax
 
     cmp $64, %rsi           # kolla ifall bufferten är full
     je putInt_outImage
@@ -240,7 +240,7 @@ putInt:
     jmp putInt_convert_loop # om inte, börja kolla talen
 
 putInt_negative:
-    movb $45, (%rdi, %rsi, 1)  # sätt ett minustecken i bufferten framför talet
+    movb $45, (%r9, %rsi, 1)  # sätt ett minustecken i bufferten framför talet
     incq %rsi                  # öka outPos
     negq %rax                  # gör själva talet positivt så att vi kan använda det
 
@@ -259,7 +259,7 @@ putInt_convert_loop:
 
 putInt_pop_loop:
     popq %rdx               # poppa tecknet från stacken
-    movb %dl, (%rdi, %rsi, 1) # lägg in den outBuf
+    movb %dl, (%r9, %rsi, 1) # lägg in den outBuf
     incq %rsi               # öka outPos
     decq %r8
     testq %r8, %r8        # kolla ifall r8 är 0 (stacken tom)
@@ -270,7 +270,7 @@ putInt_pop_loop:
 
 putInt_print_zero:
     # specialfall där talet är 0
-    movb $'0', (%rdi, %rsi, 1)  # lagra 0 i bufferten
+    movb $'0', (%r9, %rsi, 1)  # lagra 0 i bufferten
     incq %rsi                  # öka outPos
     movq %rsi, outPos(%rip)     # uppdatera outPos
     ret
