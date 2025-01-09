@@ -29,10 +29,10 @@ getInt:
     je getInt_callInImage
 
 parse_number:
-    movq $1, %rbx               # default är positivt tal (inget tecken = positivt tal)
+    movq $1, %r8               # default är positivt tal (inget tecken = positivt tal)
 skip_whitespace:
     movb (%rdi,%rsi,1), %al     # ladda tecken
-    cmpb $32, %al               # jämför med mellanslag
+    cmpb $' ', %al              # jämför med mellanslag
     jne check_sign              # om inte mellanslag, börja kolla tal
     incq %rsi                   # öka buffertpositonen
     jmp skip_whitespace         # läs nytt tecken
@@ -48,13 +48,13 @@ check_sign:
 
 positive_number:
     # markera tal som positivt
-    movq $1, %rbx                      
+    movq $1, %r8                      
     incq %rsi
     jmp read_digits
 
 negative_number:
     # markera tal som negativt
-    movq $-1, %rbx              
+    movq $-1, %r8              
     incq %rsi
     jmp read_digits
 
@@ -84,7 +84,7 @@ finish:
     movq %rsi, inPos(%rip)
 
     # ifall resultat var negativt
-    cmpq $-1, %rbx
+    cmpq $-1, %r8
     jne return_result
     negq %rcx
 
@@ -92,7 +92,7 @@ return_result:
     movq %rcx, %rax             # ladda in talet för retur
     ret
 
-getInt_callInImage:
+getInt_callInImage:          
     call inImage
     jmp getInt
 
@@ -102,11 +102,11 @@ getText:
     leaq inBuf(%rip), %rdx     # ladda inBuf
     movq inPos(%rip), %rcx     # ladda inPos
 
+    movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8 (64 bitars)
+    movq %rsi, %r9            # n (antalet tecken att läsa) -> %r9d (32 bitars)
+
     cmpb $0, (%rdx,%rcx,1)              # kolla ifall bufferten är tom
     je getText_callInImage
-
-    movq %rdi, %r8             # buf (adress till minnesutrymme att kopiera sträng) -> %r8 (64 bitars)
-    movl %esi, %r9d            # n (antalet tecken att läsa) -> %r9d (32 bitars)
 
     # skippa whitespace
 strip_whitespace:
@@ -151,7 +151,14 @@ end:
     ret                        
 
 getText_callInImage:
+    pushq %rdi
+    pushq %rsi
+
     call inImage
+
+    popq %rsi
+    popq %rdi
+
     jmp getText       
               
 
