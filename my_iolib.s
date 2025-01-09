@@ -272,7 +272,8 @@ putInt_print_zero:
     ret
 
 putInt_outImage:
-    call outImage
+    call outImage 
+    movq $0, %rsi               
     jmp putInt
        
 .global putText
@@ -296,6 +297,7 @@ putText_loop:
 
 putText_outImage:
     call outImage              # skriv ut bufferten
+    movq $0, %rsi
     jmp putText_loop           # fortsätt
 
 putText_done:
@@ -318,6 +320,7 @@ putChar:
 
 putChar_outImage:
     call outImage
+    movq $0, %rcx
     jmp putChar                     
 
 .global getOutPos
