@@ -56,10 +56,15 @@ putInt:
 //movq outPos, %rcx
 movq %rax, %rdi
 movq $10, %rcx
+ret
+
+putIntRec:
 xor %rdx, %rdx
 divq %rcx
 addq $0x30, %rdx
 //PUSH
+cmpq %rax, $0
+jg putIntRec
 //go to putInt if rax more than 0
 //POP
 leaq outBuf(%rip), %rax
@@ -67,7 +72,11 @@ movq outPos, %rcx
 movb %dil, (%rax,%rcx)
 addq $1, outPos
 //return to line 64 (POP)
-ret
+
+base_case:
+xor %rdx, %rdx
+divq %rcx
+addq $0x30, %rdx
 
 .global putText
 putText:
