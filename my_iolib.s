@@ -318,7 +318,7 @@ putChar:
 
 putChar_outImage:
     call outImage
-    jmp putChar
+    jmp putChar                     
 
 .global getOutPos
 getOutPos:
