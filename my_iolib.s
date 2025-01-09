@@ -219,7 +219,6 @@ outImage:
 
 .global putInt
 putInt:
-    pushq %rbx              # pusha rbx till stacken
     movsxd %edi, %rdi       # sign extend edi till 64-bitars längd
 
     movq %rdi, %rax         # flytta talet till rax
@@ -230,10 +229,10 @@ putInt:
     je putInt_outImage
 
     # specialfall för talet 0
-    testq %rbx, %rbx        
+    testq %rax, %rax        
     jz putInt_print_zero    # ifall talet är 0, hoppa till specialfallet 
 
-    movq $0, %rbx           # sätt rbx till 0 för att räkna ihop talet
+    movq $0, %r8           # sätt r8 till 0 för veta hur många siffror
 
     cmp $0, %rax            
     jl putInt_negative      # kolla ifall talet är negativt
@@ -251,7 +250,7 @@ putInt_convert_loop:
     divq %rcx               # dela rax med 10 (kvot i %rax, rest i %rdx)
     addb $'0', %dl          # konvertera resten till ASCII
     
-    incq %rbx               # öka räknaren för att veta hur många tecken vi ska lägga tillbaka
+    incq %r8               # öka räknaren för att veta hur många tecken vi ska lägga tillbaka
 
     pushq %rdx              # pusha tecknet till stacken
 
@@ -262,12 +261,11 @@ putInt_pop_loop:
     popq %rdx               # poppa tecknet från stacken
     movb %dl, (%rdi, %rsi, 1) # lägg in den outBuf
     incq %rsi               # öka outPos
-    decq %rbx
-    testq %rbx, %rbx        # kolla ifall rbx är 0 (stacken tom)
-    jnz putInt_pop_loop            # ifall rbx inte är 0, fortsätta poppa 
+    decq %r8
+    testq %r8, %r8        # kolla ifall r8 är 0 (stacken tom)
+    jnz putInt_pop_loop            # ifall r8 inte är 0, fortsätta poppa 
 
     movq %rsi, outPos(%rip) # uppdatera outPos
-    popq %rbx               # poppa rbx
     ret
 
 putInt_print_zero:
@@ -275,7 +273,6 @@ putInt_print_zero:
     movb $'0', (%rdi, %rsi, 1)  # lagra 0 i bufferten
     incq %rsi                  # öka outPos
     movq %rsi, outPos(%rip)     # uppdatera outPos
-    popq %rbx                   # poppa rbx 
     ret
 
 putInt_outImage:
